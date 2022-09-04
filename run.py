@@ -1,6 +1,7 @@
 import logging
 import ask_sdk_core.utils as ask_utils
 import json
+import socket
 
 # Webserver
 from flask import Flask
@@ -13,11 +14,11 @@ from ask_sdk_core.dispatch_components import AbstractExceptionHandler
 from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_model.interfaces.alexa.presentation.apl import (
     RenderDocumentDirective)
-
 from ask_sdk_model import Response
 
 
-
+# Format the MAC Address string as following: \x<byte>
+# E.g.: \x00\x11\x22\x33\x44\x55 is the MAC address 00:11:22:33:44:55
 __MAC_ADDRESS__ = ""
 
 
@@ -64,27 +65,14 @@ class LaunchRequestHandler(AbstractRequestHandler):
                     )
                 )
 
-        return (
-            handler_input.response_builder
-                .speak(speak_output)
-                .response
-        )
-
-
-class HelloWorldIntentHandler(AbstractRequestHandler):
-    # Handler for Hello World Intent.
-    # It's still here because it's useful for some copy-paste action
-    # Alexa, <skill trigger> hello
-    def can_handle(self, handler_input: HandlerInput) -> bool:
-        return ask_utils.is_intent_name("HelloWorldIntent")(handler_input)
-
-    def handle(self, handler_input: HandlerInput) -> Response:
-        speak_output = "Hello World!"
+        # Send WoL packet
+        s=socket.socket(socket.af_inet, socket.sock_dgram)
+        s.setsockopt(socket.sol_socket, socket.so_broadcast, 1)
+        s.sendto('\xff'*6+__MAC_ADDRESS__*16, ("255.255.255.255",9))
 
         return (
             handler_input.response_builder
                 .speak(speak_output)
-                # .ask("add a reprompt if you want to keep the session open for the user to respond")
                 .response
         )
 
@@ -96,7 +84,7 @@ class HelpIntentHandler(AbstractRequestHandler):
         return ask_utils.is_intent_name("AMAZON.HelpIntent")(handler_input)
 
     def handle(self, handler_input: HandlerInput) -> Response:
-        speak_output = "You can say hello to me! How can I help?"
+        speak_output = "You can just open me, and I'll turn your configured PC on!"
 
         return (
             handler_input.response_builder
@@ -123,6 +111,7 @@ class CancelOrStopIntentHandler(AbstractRequestHandler):
                 .response
         )
 
+
 class FallbackIntentHandler(AbstractRequestHandler):
     # Handler for Fallback Intent.
     # When Alexa doesn't understand what you say (so pretty often), that's what it'll return
@@ -135,6 +124,7 @@ class FallbackIntentHandler(AbstractRequestHandler):
         reprompt = "I didn't catch that. What can I help you with?"
 
         return handler_input.response_builder.speak(speech).ask(reprompt).response
+
 
 class SessionEndedRequestHandler(AbstractRequestHandler):
     # Handler for Session End.
@@ -164,7 +154,6 @@ class IntentReflectorHandler(AbstractRequestHandler):
         return (
             handler_input.response_builder
                 .speak(speak_output)
-                # .ask("add a reprompt if you want to keep the session open for the user to respond")
                 .response
         )
 
@@ -185,7 +174,6 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
         return (
             handler_input.response_builder
                 .speak(speak_output)
-                .ask(speak_output)
                 .response
         )
 
