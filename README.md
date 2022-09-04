@@ -20,9 +20,11 @@ Once you get it, create a Skill with a custom model, self-provisioned and from s
 ![Setup2](https://user-images.githubusercontent.com/22529815/188335793-a6f1b9d8-8476-44e0-a0e3-ac09ba4c2f6e.png)
 
 Set an invocation name and check if you have those intents:
+
 ![Setup3](https://user-images.githubusercontent.com/22529815/188335909-5ee770f8-b5ef-48da-8a4d-38b7c32aab3d.png)
 
 To enable the Italian language open the language dropdown menu and select "Language settings"
+
 ![Setup4](https://user-images.githubusercontent.com/22529815/188335962-815cc9d4-884b-4f7e-8ad8-6fffd78688f1.png)
 
 ### Python
