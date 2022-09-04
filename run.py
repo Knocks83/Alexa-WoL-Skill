@@ -1,4 +1,5 @@
 import logging
+import struct
 import ask_sdk_core.utils as ask_utils
 import json
 import socket
@@ -17,8 +18,7 @@ from ask_sdk_model.interfaces.alexa.presentation.apl import (
 from ask_sdk_model import Response
 
 
-# Format the MAC Address string as following: \x<byte>
-# E.g.: \x00\x11\x22\x33\x44\x55 is the MAC address 00:11:22:33:44:55
+# Write the MAC address as following: 00:11:22:33:44:55
 __MAC_ADDRESS__ = ""
 
 
@@ -39,7 +39,9 @@ class LaunchRequestHandler(AbstractRequestHandler):
     def handle(self, handler_input: HandlerInput) -> Response:
         logging.debug("LaunchRequestHandler")
         # What Alexa will say
-        speak_output = f"Turning on PC"
+        speak_output = "Turning on PC"
+        if handler_input.request_envelope.request.locale == 'it-IT':
+            speak_output = 'Sto accendendo il PC'
         
         #====================================================================
         # Add a visual with Alexa Layouts
@@ -50,6 +52,9 @@ class LaunchRequestHandler(AbstractRequestHandler):
 
             if ask_utils.get_supported_interfaces(
                     handler_input).alexa_presentation_apl is not None:
+                title = "Turned on."
+                if handler_input.request_envelope.request.locale == 'it-IT':
+                    title = f'Acceso.'
                 handler_input.response_builder.add_directive(
                     RenderDocumentDirective(
                         document=apl_simple,
@@ -58,7 +63,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
                                 #====================================================================
                                 # Set a headline and subhead to display on the screen if there is one
                                 #====================================================================
-                                "Title": 'Turned on.',
+                                "Title": title,
                                 "Subtitle": "",
                             }
                         }
@@ -66,9 +71,17 @@ class LaunchRequestHandler(AbstractRequestHandler):
                 )
 
         # Send WoL packet
-        s=socket.socket(socket.af_inet, socket.sock_dgram)
-        s.setsockopt(socket.sol_socket, socket.so_broadcast, 1)
-        s.sendto('\xff'*6+__MAC_ADDRESS__*16, ("255.255.255.255",9))
+        s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
+        mac_arr = __MAC_ADDRESS__.split(':')
+        address = struct.pack('BBBBBB', int(mac_arr[0],16),
+            int(mac_arr[1],16),
+            int(mac_arr[2],16),
+            int(mac_arr[3],16),
+            int(mac_arr[4],16),
+            int(mac_arr[5],16))
+        s.sendto(b'\xff' * 6 + address * 16, ("255.255.255.255",9))
 
         return (
             handler_input.response_builder
@@ -85,6 +98,8 @@ class HelpIntentHandler(AbstractRequestHandler):
 
     def handle(self, handler_input: HandlerInput) -> Response:
         speak_output = "You can just open me, and I'll turn your configured PC on!"
+        if handler_input.request_envelope.request.locale == 'it-IT':
+            speak_output = 'Puoi solo aprirmi, e io accenderò il PC che hai configurato!'
 
         return (
             handler_input.response_builder
@@ -104,6 +119,8 @@ class CancelOrStopIntentHandler(AbstractRequestHandler):
 
     def handle(self, handler_input: HandlerInput) -> Response:
         speak_output = "Goodbye!"
+        if handler_input.request_envelope.request.locale == 'it-IT':
+            speak_output = 'Arrivederci!'
 
         return (
             handler_input.response_builder
@@ -121,7 +138,13 @@ class FallbackIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input: HandlerInput) -> Response:
         logger.info("In FallbackIntentHandler")
         speech = "Hmm, I'm not sure. What would you like to do?"
+        if handler_input.request_envelope.request.locale == 'it-IT':
+            speech = 'Hmm, non ne sono sicuro. Cosa vorresti che faccia?'
+
         reprompt = "I didn't catch that. What can I help you with?"
+        if handler_input.request_envelope.request.locale == 'it-IT':
+            reprompt = 'Non ho capito. Come posso aiutarti?'
+
 
         return handler_input.response_builder.speak(speech).ask(reprompt).response
 
@@ -138,26 +161,6 @@ class SessionEndedRequestHandler(AbstractRequestHandler):
         return handler_input.response_builder.response
 
 
-class IntentReflectorHandler(AbstractRequestHandler):
-    """The intent reflector is used for interaction model testing and debugging.
-    It will simply repeat the intent the user said. You can create custom handlers
-    for your intents by defining them above, then also adding them to the request
-    handler chain below.
-    """
-    def can_handle(self, handler_input: HandlerInput) -> bool:
-        return ask_utils.is_request_type("IntentRequest")(handler_input)
-
-    def handle(self, handler_input: HandlerInput) -> Response:
-        intent_name = ask_utils.get_intent_name(handler_input)
-        speak_output = "You just triggered " + intent_name + "."
-
-        return (
-            handler_input.response_builder
-                .speak(speak_output)
-                .response
-        )
-
-
 class CatchAllExceptionHandler(AbstractExceptionHandler):
     """Generic error handling to capture any syntax or routing errors. If you receive an error
     stating the request handler chain is not found, you have not implemented a handler for
@@ -170,6 +173,8 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
         logger.error(exception, exc_info=True)
 
         speak_output = "Sorry, I had trouble doing what you asked. Please try again."
+        if handler_input.request_envelope.request.locale == 'it-IT':
+            speak_output = "Scusa, ho riscontrato problemi nell'esecuzione. Riprova."
 
         return (
             handler_input.response_builder
@@ -186,7 +191,6 @@ sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelOrStopIntentHandler())
 sb.add_request_handler(FallbackIntentHandler())
 sb.add_request_handler(SessionEndedRequestHandler())
-sb.add_request_handler(IntentReflectorHandler()) # make sure IntentReflectorHandler is last so it doesn't override your custom intent handlers
 
 sb.add_exception_handler(CatchAllExceptionHandler())
 
