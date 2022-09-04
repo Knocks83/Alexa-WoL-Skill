@@ -1,0 +1,4 @@
+ask_sdk_core==1.17.1
+ask_sdk_model==1.35.0
+Flask==2.1.2
+flask_ask_sdk==1.0.0
