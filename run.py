@@ -1,6 +1,5 @@
 import logging
 import struct
-import ask_sdk_core.utils as ask_utils
 import json
 import socket
 
@@ -9,6 +8,7 @@ from flask import Flask
 from flask_ask_sdk.skill_adapter import SkillAdapter
 
 # Alexa thingies
+import ask_sdk_core.utils as ask_utils
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.dispatch_components import AbstractExceptionHandler
@@ -17,10 +17,15 @@ from ask_sdk_model.interfaces.alexa.presentation.apl import (
     RenderDocumentDirective)
 from ask_sdk_model import Response
 
+# Dotenv thingies
+from dotenv import load_dotenv
+from os import getenv
+from os.path import dirname, realpath
 
-# Write the MAC address as following: 00:11:22:33:44:55
-__MAC_ADDRESS__ = ""
 
+# Load dotenv and get the mac address
+load_dotenv(dotenv_path=dirname(realpath(__file__))+'/config.env')
+__MAC_ADDRESS__ = getenv('MAC_ADDRESS')
 
 
 # Configure logging
