@@ -52,7 +52,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
         # Add a visual with Alexa Layouts
         #====================================================================
         # Import an Alexa Presentation Language (APL) template
-        with open("./documents/APL_simple.json") as apl_doc:
+        with open(dirname(realpath(__file__))+"/documents/APL_simple.json") as apl_doc:
             apl_simple = json.load(apl_doc)
 
             if ask_utils.get_supported_interfaces(
